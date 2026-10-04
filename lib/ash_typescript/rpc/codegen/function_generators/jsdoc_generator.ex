@@ -252,7 +252,8 @@ defmodule AshTypescript.Rpc.Codegen.FunctionGenerators.JsdocGenerator do
 
   defp get_source_location(entity) do
     with %{__spark_metadata__: %{anno: anno}} when is_list(anno) <- entity,
-         file when is_list(file) <- Keyword.get(anno, :file) do
+         # Spark has stored the file as a charlist, and newer versions store a binary
+         file when is_list(file) or is_binary(file) <- Keyword.get(anno, :file) do
       file_path = to_string(file)
       format_source_location(file_path)
     else

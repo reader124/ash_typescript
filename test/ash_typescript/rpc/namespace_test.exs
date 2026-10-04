@@ -286,6 +286,37 @@ defmodule AshTypescript.Rpc.NamespaceTest do
       refute jsdoc =~ "@rpcActionDef "
     end
 
+    test "generate_jsdoc includes the action's source location when exposing internals" do
+      Application.put_env(:ash_typescript, :add_ash_internals_to_jsdoc, true)
+
+      resource = AshTypescript.Test.Todo
+      action = %{type: :read, name: :read}
+      rpc_action = %{action: :read}
+
+      jsdoc = JsdocGenerator.generate_jsdoc(resource, action, rpc_action, namespace: "todos")
+
+      assert jsdoc =~ "@ashActionDef test/support/resources/todo.ex"
+    end
+
+    test "generate_jsdoc includes the rpc action's source location for charlist and binary anno files" do
+      Application.put_env(:ash_typescript, :add_ash_internals_to_jsdoc, true)
+
+      resource = AshTypescript.Test.Todo
+      action = %{type: :read, name: :list}
+      file = Path.join(File.cwd!(), "lib/my_app/domain.ex")
+
+      for anno_file <- [String.to_charlist(file), file] do
+        rpc_action = %{
+          action: :list,
+          __spark_metadata__: %Spark.Dsl.Entity.Meta{anno: [file: anno_file, location: 1]}
+        }
+
+        jsdoc = JsdocGenerator.generate_jsdoc(resource, action, rpc_action, namespace: "todos")
+
+        assert jsdoc =~ "@rpcActionDef lib/my_app/domain.ex"
+      end
+    end
+
     test "generate_jsdoc includes action description when exposing internals" do
       Application.put_env(:ash_typescript, :add_ash_internals_to_jsdoc, true)
 
